@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace FWUtility
+namespace FWUtility.Views
 {
 	/// <summary>
-	/// Логика взаимодействия для MainWindow.xaml
+	/// Логика взаимодействия для EditableView.xaml
 	/// </summary>
-	public partial class MainWindow : Window
+	public partial class EditableView : UserControl
 	{
-		public MainWindow()
+		public EditableView()
 		{
 			InitializeComponent();
 		}

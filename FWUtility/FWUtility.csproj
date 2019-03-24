@@ -77,6 +77,9 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsInput, Version=1.0.4.0, Culture=neutral, PublicKeyToken=9b287f7dc5073cad, processorArchitecture=MSIL">
+      <HintPath>..\packages\InputSimulator.1.0.4.0\lib\net20\WindowsInput.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -86,8 +89,21 @@
     <Compile Include="AppBootstrapper.cs" />
     <Compile Include="Database\FWUDbContext.cs" />
     <Compile Include="Helpers\Helper.cs" />
+    <Compile Include="Migrations\201903242002059_AddPaths.cs" />
+    <Compile Include="Migrations\201903242002059_AddPaths.Designer.cs">
+      <DependentUpon>201903242002059_AddPaths.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201903242012120_ModifyPathModel.cs" />
+    <Compile Include="Migrations\201903242012120_ModifyPathModel.Designer.cs">
+      <DependentUpon>201903242012120_ModifyPathModel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201903242242266_RemovePathModel.cs" />
+    <Compile Include="Migrations\201903242242266_RemovePathModel.Designer.cs">
+      <DependentUpon>201903242242266_RemovePathModel.cs</DependentUpon>
+    </Compile>
     <Compile Include="ViewModels\DialogViewModel.cs" />
     <Compile Include="ViewModels\EditableViewModel.cs" />
+    <Compile Include="ViewModels\SettingsViewModel.cs" />
     <Compile Include="Views\DialogView.xaml.cs">
       <DependentUpon>DialogView.xaml</DependentUpon>
     </Compile>
@@ -101,6 +117,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Views\SettingsView.xaml.cs">
+      <DependentUpon>SettingsView.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -125,6 +144,15 @@
     <EmbeddedResource Include="Migrations\201903240822291_inintializing.resx">
       <DependentUpon>201903240822291_inintializing.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201903242002059_AddPaths.resx">
+      <DependentUpon>201903242002059_AddPaths.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201903242012120_ModifyPathModel.resx">
+      <DependentUpon>201903242012120_ModifyPathModel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201903242242266_RemovePathModel.resx">
+      <DependentUpon>201903242242266_RemovePathModel.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -148,6 +176,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\MainView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\SettingsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

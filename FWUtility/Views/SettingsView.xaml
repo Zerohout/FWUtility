@@ -1,0 +1,65 @@
+﻿<UserControl x:Class="FWUtility.Views.SettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:FWUtility.Views"
+    xmlns:cal="http://www.caliburnproject.org"
+    mc:Ignorable="d"
+    d:DesignHeight="450"
+    d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Vertical"
+                    Grid.Column="0"
+                    Grid.Row="0"
+                    Margin="0 10 0 5">
+            <TextBlock FontSize="20"
+                       FontFamily="Comic Sans MS"
+                       Text="Путь до папки Arc"
+                       HorizontalAlignment="Center"
+                       Margin="0 5"/>
+            <TextBox Text="{Binding ArcPath,UpdateSourceTrigger=PropertyChanged}"
+                     FontSize="20"
+                     FontFamily="Comic Sans MS"
+                     Margin="5,0"
+                     cal:Message.Attach="[TextChanged] = [Action TextChanged()]"/>
+        </StackPanel>
+        <Grid Grid.Row="1"
+            Grid.Column="0"
+              Margin="0 5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button
+			x:Name="SavePaths"
+			Grid.Row="0"
+			Grid.Column="0"
+                Margin="10 0 10 5">
+                <TextBlock
+                    FontSize="20"
+                    FontFamily="Comic Sans MS"
+                    Text="Сохранить"/>
+            </Button>
+            <Button x:Name="Cancel"
+                    Grid.Row="1"
+                Margin="10 0 10 5">
+                <TextBlock Text="Отменить"
+                           FontSize="20"
+                           FontFamily="Comic Sans MS"/>
+            </Button>
+
+        </Grid>
+
+    </Grid>
+</UserControl>

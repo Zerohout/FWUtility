@@ -1,10 +1,7 @@
 ﻿namespace FWUtility.ViewModels
 {
-	using System.Data.Entity;
 	using System.IO;
 	using Caliburn.Micro;
-	using Database;
-	using Model;
 	using static Helpers.Helper;
 
 	public class SettingsViewModel : Screen
@@ -12,7 +9,7 @@
 		private string _arcPath;
 
 		public string ArcPathTemp { get; set; }
-		
+
 		public string ArcPath
 		{
 			get => _arcPath;
@@ -22,7 +19,7 @@
 				NotifyOfPropertyChange(() => ArcPath);
 			}
 		}
-		
+
 		public SettingsViewModel(string arcPath)
 		{
 			ArcPathTemp = arcPath;
@@ -54,9 +51,9 @@
 			ArcPathTemp = ArcPath;
 		}
 
-		public bool CanSavePaths => 
-			!string.IsNullOrWhiteSpace(ArcPath) 
-			&& ArcPath != ArcPathTemp 
+		public bool CanSavePaths =>
+			!string.IsNullOrWhiteSpace(ArcPath)
+			&& ArcPath != ArcPathTemp
 			&& ArcPath != $"Укажите {ArcPathString}";
 
 		public void Cancel()

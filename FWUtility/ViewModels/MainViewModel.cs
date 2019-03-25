@@ -11,9 +11,9 @@
 	using System.Windows;
 	using Caliburn.Micro;
 	using Database;
-	using Model;
 	using WindowsInput;
 	using WindowsInput.Native;
+	using Models;
 	using static Helpers.Helper;
 	using Screen = Caliburn.Micro.Screen;
 

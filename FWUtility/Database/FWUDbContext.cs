@@ -2,7 +2,7 @@
 {
 	using System;
 	using System.Data.Entity;
-	using Model;
+	using Models;
 
 	public class FWUDbContext : DbContext
 	{

@@ -1,19 +1,37 @@
 ﻿namespace FWUtility.ViewModels
 {
-	using System;
+	using System.Collections.Generic;
 	using System.Data.Entity;
 	using System.Diagnostics;
 	using System.IO;
 	using System.Linq;
 	using System.Threading;
+	using System.Threading.Tasks;
 	using System.Windows;
 	using Caliburn.Micro;
 	using Database;
 	using Model;
+	using WindowsInput;
+	using WindowsInput.Native;
 	using static Helpers.Helper;
+	using Screen = Caliburn.Micro.Screen;
 
 	public class MainViewModel : Conductor<Screen>.Collection.OneActive
 	{
+		private WindowState _windowState;
+
+		public WindowState WindowState
+		{
+			get => _windowState;
+			set
+			{
+				_windowState = value;
+				NotifyOfPropertyChange(() => WindowState);
+			}
+		}
+
+
+
 		private BindableCollection<Account> _accounts = new BindableCollection<Account>();
 		private Account _selectedAccount;
 		private string _arcPath;
@@ -58,12 +76,12 @@
 		{
 			if (!File.Exists(ArcPathDirectory))
 			{
-				using (var fs = new FileStream(ArcPathDirectory,FileMode.Create))
+				using (var fs = new FileStream(ArcPathDirectory, FileMode.Create))
 				{
 					fs.Dispose();
 				}
 				//File.Create(ArcPathDirectory);
-			
+
 
 				using (var sw = new StreamWriter(ArcPathDirectory))
 				{
@@ -79,8 +97,10 @@
 			}
 		}
 
-		public void Start()
+		public async void Start()
 		{
+			WindowState = WindowState.Minimized;
+			
 			var wm = new WindowManager();
 			if (!Directory.Exists(ArcPath))
 			{
@@ -90,9 +110,166 @@
 				return;
 			}
 
-			Process.Start($"{ArcPath}{ArcEndPath}");
-			Thread.Sleep(5000);
+			var temp = Accounts.Where(a => a.IsChecked);
+
+			foreach (var acc in temp)
+			{
+				await StartingGame(acc);
+			}
+
+		}
+
+		private Task StartingGame(Account currAcc)
+		{
+			var sim = new InputSimulator();
+
+			var arcs = Process.GetProcessesByName("Arc");
+
+			if (arcs.Length > 0)
+			{
+				arcs.First().Kill();
+				while (true)
+				{
+					if (arcs.First().HasExited)
+					{
+						break;
+					}
+					Thread.Sleep(1000);
+				}
+
+			}
+
 			
+
+			Process.Start($"{ArcPath}{ArcEndPath}");
+
+			var working = true;
+			var flag = false;
+			var arcId = 0;
+			var test = new List<int>();
+			var q = new List<int>();
+
+			while (working)
+			{
+				foreach (var p in Process.GetProcesses())
+				{
+					if (p.ProcessName == "Arc")
+					{
+
+						if (!test.Contains(p.Id))
+						{
+							test.Add(p.Id);
+
+						}
+						if (arcId == 0 || arcId == p.Id)
+						{
+							if (arcId == 0)
+							{
+								arcId = p.Id;
+							}
+
+							break;
+						}
+
+						if (arcId != p.Id)
+						{
+							arcId = p.Id;
+							working = false;
+							break;
+						}
+
+					}
+				}
+
+				q = test;
+
+				Thread.Sleep(500);
+			}
+
+			var proc = Process.GetProcessById(arcId);
+
+			Thread.Sleep(5000);
+
+			sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
+			Thread.Sleep(500);
+			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.SHIFT, VirtualKeyCode.END);
+			Thread.Sleep(500);
+			sim.Keyboard.TextEntry(currAcc.Email);
+			Thread.Sleep(500);
+			sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
+			Thread.Sleep(500);
+			sim.Keyboard.TextEntry(currAcc.Password);
+			Thread.Sleep(500);
+			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+
+			working = true;
+
+			while (working)
+			{
+				foreach (var p in Process.GetProcesses())
+				{
+					if (p.ProcessName == "ArcChat")
+					{
+						working = false;
+						break;
+					}
+				}
+
+				Thread.Sleep(1000);
+			}
+
+
+			Process.Start($"{ArcPath}{LauncherEndPath}", LauncherParameter);
+
+			working = true;
+
+			while (working)
+			{
+				foreach (var p in Process.GetProcesses())
+				{
+					if (p.ProcessName == "patcher")
+					{
+						working = false;
+						break;
+					}
+				}
+				Thread.Sleep(1000);
+			}
+
+			for (var i = 0; i < 11; i++)
+			{
+				sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
+				Thread.Sleep(500);
+			}
+
+			Thread.Sleep(2000);
+
+			working = true;
+
+			while (working)
+			{
+				foreach (var p in Process.GetProcesses())
+				{
+					if (p.ProcessName == "pem")
+					{
+						working = false;
+						break;
+					}
+				}
+
+				if (working)
+				{
+					sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+				}
+
+				Thread.Sleep(2000);
+			}
+
+			Thread.Sleep(5000);
+
+			proc.Kill();
+
+			return Task.CompletedTask;
 		}
 
 		public void CheckedValidation()

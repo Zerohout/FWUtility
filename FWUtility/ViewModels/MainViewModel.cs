@@ -1,10 +1,11 @@
 ﻿namespace FWUtility.ViewModels
 {
-	using System.Collections.Generic;
+	using System;
 	using System.Data.Entity;
 	using System.Diagnostics;
 	using System.IO;
 	using System.Linq;
+	using System.Runtime.InteropServices;
 	using System.Threading;
 	using System.Threading.Tasks;
 	using System.Windows;
@@ -110,19 +111,6 @@
 				return;
 			}
 
-			var temp = Accounts.Where(a => a.IsChecked);
-
-			foreach (var acc in temp)
-			{
-				await StartingGame(acc);
-			}
-
-		}
-
-		private Task StartingGame(Account currAcc)
-		{
-			var sim = new InputSimulator();
-
 			var arcs = Process.GetProcessesByName("Arc");
 
 			if (arcs.Length > 0)
@@ -136,31 +124,37 @@
 					}
 					Thread.Sleep(1000);
 				}
-
 			}
 
-			
+			PemIds.Clear();
 
+			foreach (var acc in Accounts.Where(a => a.IsChecked))
+			{
+				await StartingGame(acc);
+			}
+
+			Thread.Sleep(5000);
+			Application.Current.Shutdown();
+		}
+
+		[DllImport("user32.dll")]
+		static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+		private async Task StartingGame(Account currAcc)
+		{
+			var sim = new InputSimulator();
+			
 			Process.Start($"{ArcPath}{ArcEndPath}");
 
 			var working = true;
-			var flag = false;
 			var arcId = 0;
-			var test = new List<int>();
-			var q = new List<int>();
-
+			
 			while (working)
 			{
 				foreach (var p in Process.GetProcesses())
 				{
 					if (p.ProcessName == "Arc")
 					{
-
-						if (!test.Contains(p.Id))
-						{
-							test.Add(p.Id);
-
-						}
 						if (arcId == 0 || arcId == p.Id)
 						{
 							if (arcId == 0)
@@ -177,64 +171,19 @@
 							working = false;
 							break;
 						}
-
 					}
 				}
-
-				q = test;
-
+				
 				Thread.Sleep(500);
 			}
 
-			var proc = Process.GetProcessById(arcId);
+			await LoginInGame(currAcc);
 
-			Thread.Sleep(5000);
-
-			sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
-			Thread.Sleep(500);
-			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.SHIFT, VirtualKeyCode.END);
-			Thread.Sleep(500);
-			sim.Keyboard.TextEntry(currAcc.Email);
-			Thread.Sleep(500);
-			sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
-			Thread.Sleep(500);
-			sim.Keyboard.TextEntry(currAcc.Password);
-			Thread.Sleep(500);
-			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-
-			working = true;
-
-			while (working)
-			{
-				foreach (var p in Process.GetProcesses())
-				{
-					if (p.ProcessName == "ArcChat")
-					{
-						working = false;
-						break;
-					}
-				}
-
-				Thread.Sleep(1000);
-			}
-
-
+			await WaitingProccess("ArcChat");
+			
 			Process.Start($"{ArcPath}{LauncherEndPath}", LauncherParameter);
 
-			working = true;
-
-			while (working)
-			{
-				foreach (var p in Process.GetProcesses())
-				{
-					if (p.ProcessName == "patcher")
-					{
-						working = false;
-						break;
-					}
-				}
-				Thread.Sleep(1000);
-			}
+			await WaitingProccess("patcher");
 
 			for (var i = 0; i < 11; i++)
 			{
@@ -245,13 +194,14 @@
 			Thread.Sleep(2000);
 
 			working = true;
-
+			
 			while (working)
 			{
 				foreach (var p in Process.GetProcesses())
 				{
-					if (p.ProcessName == "pem")
+					if (p.ProcessName == "pem" && !PemIds.Contains(p.Id))
 					{
+						PemIds.Add(p.Id);
 						working = false;
 						break;
 					}
@@ -267,7 +217,59 @@
 
 			Thread.Sleep(5000);
 
-			proc.Kill();
+			var arc = Process.GetProcessById(arcId);
+			arc.Kill();
+
+			while (true)
+			{
+				if (arc.HasExited)
+				{
+					break;
+				}
+				Thread.Sleep(1000);
+			}
+			
+			Thread.Sleep(7000);
+			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+			
+			ShowWindow(Process.GetProcessById(PemIds.Last()).MainWindowHandle, 6);
+		}
+
+		private Task WaitingProccess(string proccessName)
+		{
+			var working = true;
+			while (working)
+			{
+				foreach (var p in Process.GetProcesses())
+				{
+					if (p.ProcessName == proccessName)
+					{
+						working = false;
+						break;
+					}
+				}
+				Thread.Sleep(1000);
+			}
+
+			return Task.CompletedTask;
+		}
+
+		private Task LoginInGame(Account acc)
+		{
+			var sim = new InputSimulator();
+
+			Thread.Sleep(5000);
+			sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
+			Thread.Sleep(500);
+			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.SHIFT, VirtualKeyCode.END);
+			Thread.Sleep(500);
+			sim.Keyboard.TextEntry(acc.Email);
+			Thread.Sleep(500);
+			sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
+			Thread.Sleep(500);
+			sim.Keyboard.TextEntry(acc.Password);
+			Thread.Sleep(500);
+			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
 
 			return Task.CompletedTask;
 		}

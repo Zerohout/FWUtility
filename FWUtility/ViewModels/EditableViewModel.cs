@@ -49,7 +49,7 @@
 			(Parent as MainViewModel)?.LoadAccountData();
 		}
 
-		public bool CanCreateAccount => EditAccountValidation;
+		public bool CanCreateAccount => CreateAccountValidation;
 
 
 		/// <summary>
@@ -136,6 +136,29 @@
 		/// Определение изменения данных аккаунта
 		/// </summary>
 		private bool EditAccountValidation
+		{
+			get
+			{
+				if (string.IsNullOrWhiteSpace(_editingAccount.Name)
+				    || string.IsNullOrWhiteSpace(_editingAccount.Email)
+				    || string.IsNullOrWhiteSpace(_editingAccount.Password)
+				    || _editingAccount.Name == CreatingName)
+				{
+					return false;
+				}
+
+				if (((MainViewModel)Parent).SelectedAccount.Name == _editingAccount.Name
+				    && ((MainViewModel)Parent).SelectedAccount.Email == _editingAccount.Email
+				    && ((MainViewModel)Parent).SelectedAccount.Password == _editingAccount.Password)
+				{
+					return false;
+				}
+
+				return true;
+			}
+		}
+
+		private bool CreateAccountValidation
 		{
 			get
 			{

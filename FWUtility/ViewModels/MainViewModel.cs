@@ -1,6 +1,7 @@
 ﻿namespace FWUtility.ViewModels
 {
 	using System;
+	using System.ComponentModel;
 	using System.Data.Entity;
 	using System.Diagnostics;
 	using System.IO;
@@ -31,6 +32,9 @@
 			LoadPathData();
 		}
 
+		/// <summary>
+		/// Загрузка Аккаунтов
+		/// </summary>
 		public async void LoadAccountData()
 		{
 			Accounts.Clear();
@@ -46,6 +50,9 @@
 			}
 		}
 
+		/// <summary>
+		/// Загрузка пути к Arc
+		/// </summary>
 		public async void LoadPathData()
 		{
 			if (!File.Exists(ArcPathDirectory))
@@ -87,8 +94,6 @@
 			NotifyOfPropertyChange(() => CanStart);
 		}
 
-		#endregion
-
 		/// <summary>
 		/// Изменение выделения аккаунта в списке
 		/// </summary>
@@ -112,6 +117,8 @@
 				}, EditingState.EDITING);
 		}
 
+		#endregion
+		
 		#region Buttons
 
 		/// <summary>
@@ -156,20 +163,28 @@
 
 			PemIds.Clear();
 
-			foreach (var acc in Accounts.Where(a => a.IsChecked))
-			{
-				await StartingGame(acc);
-			}
+			var bw = new BackgroundWorker();
+
+			await Task.Run(StartWorking);
 
 			Thread.Sleep(5000);
 			Application.Current.Shutdown();
 		}
 
-		public bool CanStart => 
-			Accounts.Count(a => a.IsChecked) > 0 
+		public bool CanStart =>
+			Accounts.Count(a => a.IsChecked) > 0
 			&& Accounts.Count(a => a.IsChecked) <= 3;
 
 		#region Запуск лаунчера игры(Методы)
+
+		private async Task StartWorking()
+		{
+			foreach (var acc in Accounts.Where(a => a.IsChecked))
+			{
+				await StartingGame(acc);
+				await Task.Yield();
+			}
+		}
 
 		[DllImport("user32.dll")]
 		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
@@ -185,6 +200,56 @@
 
 			Process.Start($"{ArcPath}{ArcEndPath}");
 
+			var arcId = await WaitingStartArcProcess();
+			await Task.Yield();
+
+			await LoginInGame(currAcc);
+
+			await Task.Yield();
+
+			await WaitingProccess("ArcChat");
+
+			Process.Start($"{ArcPath}{LauncherEndPath}", LauncherParameter);
+
+			await Task.Yield();
+			await WaitingProccess("patcher");
+
+			for (var i = 0; i < 11; i++)
+			{
+				sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
+				Thread.Sleep(500);
+			}
+
+			Thread.Sleep(2000);
+
+			await WaitingStartingGame();
+
+			Thread.Sleep(5000);
+
+			var arc = Process.GetProcessById(arcId);
+			arc.Kill();
+
+			while (true)
+			{
+				if (arc.HasExited)
+				{
+					break;
+				}
+				Thread.Sleep(1000);
+			}
+
+			Thread.Sleep(7000);
+			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+
+			ShowWindow(Process.GetProcessById(PemIds.Last()).MainWindowHandle, 6);
+		}
+
+		/// <summary>
+		/// Ожидания полного запуска процесса Arc.exe
+		/// </summary>
+		/// <returns>Id необходимого процесса Arc</returns>
+		private Task<int> WaitingStartArcProcess()
+		{
 			var working = true;
 			var arcId = 0;
 
@@ -216,42 +281,7 @@
 				Thread.Sleep(500);
 			}
 
-			await LoginInGame(currAcc);
-
-			await WaitingProccess("ArcChat");
-
-			Process.Start($"{ArcPath}{LauncherEndPath}", LauncherParameter);
-
-			await WaitingProccess("patcher");
-
-			for (var i = 0; i < 11; i++)
-			{
-				sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
-				Thread.Sleep(500);
-			}
-
-			Thread.Sleep(2000);
-
-			await WaitingStartingGame();
-
-			Thread.Sleep(5000);
-
-			var arc = Process.GetProcessById(arcId);
-			arc.Kill();
-
-			while (true)
-			{
-				if (arc.HasExited)
-				{
-					break;
-				}
-				Thread.Sleep(1000);
-			}
-
-			Thread.Sleep(7000);
-			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-
-			ShowWindow(Process.GetProcessById(PemIds.Last()).MainWindowHandle, 6);
+			return Task.FromResult(arcId);
 		}
 
 		/// <summary>

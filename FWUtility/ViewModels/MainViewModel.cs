@@ -11,54 +11,27 @@
 	using System.Windows;
 	using Caliburn.Micro;
 	using Database;
+	using Models;
 	using WindowsInput;
 	using WindowsInput.Native;
-	using Models;
 	using static Helpers.Helper;
 	using Screen = Caliburn.Micro.Screen;
 
 	public class MainViewModel : Conductor<Screen>.Collection.OneActive
 	{
 		private WindowState _windowState;
-
-		public WindowState WindowState
-		{
-			get => _windowState;
-			set
-			{
-				_windowState = value;
-				NotifyOfPropertyChange(() => WindowState);
-			}
-		}
-
-
-
+		private string _arcPath;
 		private BindableCollection<Account> _accounts = new BindableCollection<Account>();
 		private Account _selectedAccount;
-		private string _arcPath;
 
-		public string ArcPath
-		{
-			get => _arcPath;
-			set
-			{
-				_arcPath = value;
-				NotifyOfPropertyChange(() => ArcPath);
-			}
-		}
 
 		public MainViewModel()
 		{
-			LoadData();
-		}
-
-		protected override void OnInitialize()
-		{
+			LoadAccountData();
 			LoadPathData();
-			base.OnInitialize();
 		}
 
-		public async void LoadData()
+		public async void LoadAccountData()
 		{
 			Accounts.Clear();
 			using (var ctx = new FWUDbContext())
@@ -67,7 +40,7 @@
 				Accounts.AddRange(ctx.Accounts.Local.OrderBy(a => a.Name));
 			}
 
-			if (Accounts.All(a => a.Name != CreateName))
+			if (Accounts.All(a => a.Name != CreatingName))
 			{
 				Accounts.Add(CreatingAccount);
 			}
@@ -81,8 +54,6 @@
 				{
 					fs.Dispose();
 				}
-				//File.Create(ArcPathDirectory);
-
 
 				using (var sw = new StreamWriter(ArcPathDirectory))
 				{
@@ -98,10 +69,67 @@
 			}
 		}
 
+		#region Actions
+
+		/// <summary>
+		/// Действие при отметке аккаунта в списке
+		/// </summary>
+		public void CheckedValidation()
+		{
+			NotifyOfPropertyChange(() => CanStart);
+		}
+
+		/// <summary>
+		/// Действие при снятии отметки аккаунта в списке
+		/// </summary>
+		public void UnCheckedValidation()
+		{
+			NotifyOfPropertyChange(() => CanStart);
+		}
+
+		#endregion
+
+		/// <summary>
+		/// Изменение выделения аккаунта в списке
+		/// </summary>
+		public void SelectionChanged()
+		{
+			ActiveItem?.TryClose();
+
+			if (_selectedAccount == null)
+			{
+				return;
+			}
+
+			ActiveItem = _selectedAccount.Name == CreatingName
+				? new EditableViewModel(new Account(), EditingState.CREATING)
+				: new EditableViewModel(new Account
+				{
+					AccountId = _selectedAccount.AccountId,
+					Name = _selectedAccount.Name,
+					Email = _selectedAccount.Email,
+					Password = _selectedAccount.Password
+				}, EditingState.EDITING);
+		}
+
+		#region Buttons
+
+		/// <summary>
+		/// Кнопка Настройки
+		/// </summary>
+		public void Settings()
+		{
+			SelectedAccount = null;
+			ActiveItem = new SettingsViewModel(ArcPath);
+		}
+
+		/// <summary>
+		/// Кнопка Запустить
+		/// </summary>
 		public async void Start()
 		{
 			WindowState = WindowState.Minimized;
-			
+
 			var wm = new WindowManager();
 			if (!Directory.Exists(ArcPath))
 			{
@@ -137,18 +165,29 @@
 			Application.Current.Shutdown();
 		}
 
-		[DllImport("user32.dll")]
-		static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+		public bool CanStart => 
+			Accounts.Count(a => a.IsChecked) > 0 
+			&& Accounts.Count(a => a.IsChecked) <= 3;
 
+		#region Запуск лаунчера игры(Методы)
+
+		[DllImport("user32.dll")]
+		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+		/// <summary>
+		/// Сам запуск лаунчера и необходимых процессов
+		/// </summary>
+		/// <param name="currAcc"></param>
+		/// <returns></returns>
 		private async Task StartingGame(Account currAcc)
 		{
 			var sim = new InputSimulator();
-			
+
 			Process.Start($"{ArcPath}{ArcEndPath}");
 
 			var working = true;
 			var arcId = 0;
-			
+
 			while (working)
 			{
 				foreach (var p in Process.GetProcesses())
@@ -173,14 +212,14 @@
 						}
 					}
 				}
-				
+
 				Thread.Sleep(500);
 			}
 
 			await LoginInGame(currAcc);
 
 			await WaitingProccess("ArcChat");
-			
+
 			Process.Start($"{ArcPath}{LauncherEndPath}", LauncherParameter);
 
 			await WaitingProccess("patcher");
@@ -193,27 +232,7 @@
 
 			Thread.Sleep(2000);
 
-			working = true;
-			
-			while (working)
-			{
-				foreach (var p in Process.GetProcesses())
-				{
-					if (p.ProcessName == "pem" && !PemIds.Contains(p.Id))
-					{
-						PemIds.Add(p.Id);
-						working = false;
-						break;
-					}
-				}
-
-				if (working)
-				{
-					sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-				}
-
-				Thread.Sleep(2000);
-			}
+			await WaitingStartingGame();
 
 			Thread.Sleep(5000);
 
@@ -228,13 +247,18 @@
 				}
 				Thread.Sleep(1000);
 			}
-			
+
 			Thread.Sleep(7000);
 			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-			
+
 			ShowWindow(Process.GetProcessById(PemIds.Last()).MainWindowHandle, 6);
 		}
 
+		/// <summary>
+		/// Ожидание запуска процесса
+		/// </summary>
+		/// <param name="proccessName">Название процесса</param>
+		/// <returns></returns>
 		private Task WaitingProccess(string proccessName)
 		{
 			var working = true;
@@ -254,6 +278,45 @@
 			return Task.CompletedTask;
 		}
 
+		/// <summary>
+		/// Ожидание запуска самой игры
+		/// </summary>
+		/// <returns></returns>
+		private Task WaitingStartingGame()
+		{
+			var working = true;
+			var counter = 0;
+
+			var sim = new InputSimulator();
+
+			while (working && counter < 10)
+			{
+				foreach (var p in Process.GetProcesses())
+				{
+					if (p.ProcessName == "pem" && !PemIds.Contains(p.Id))
+					{
+						PemIds.Add(p.Id);
+						working = false;
+						break;
+					}
+				}
+
+				if (working)
+				{
+					sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+				}
+
+				Thread.Sleep(3000);
+				counter++;
+			}
+
+			return Task.CompletedTask;
+		}
+
+		/// <summary>
+		/// Ввод данных в лаунчере
+		/// </summary>
+		/// <param name="acc">Требуемый аккаунт</param>
 		private Task LoginInGame(Account acc)
 		{
 			var sim = new InputSimulator();
@@ -274,56 +337,39 @@
 			return Task.CompletedTask;
 		}
 
-		public void CheckedValidation()
-		{
-			NotifyOfPropertyChange(() => CanStart);
-		}
+		#endregion
 
-		public void UnCheckedValidation()
-		{
-			NotifyOfPropertyChange(() => CanStart);
-		}
 
-		public bool CanStart
+		#endregion
+
+		#region Properties
+
+		/// <summary>
+		/// Состояние окна
+		/// </summary>
+		public WindowState WindowState
 		{
-			get
+			get => _windowState;
+			set
 			{
-				if (Accounts.Any(a => a.IsChecked))
-				{
-					return Accounts.Count(a => a.IsChecked) <= 3;
-				}
-				else
-				{
-					return false;
-				}
+				_windowState = value;
+				NotifyOfPropertyChange(() => WindowState);
 			}
 		}
 
-		public void SelectionChanged()
+		public string ArcPath
 		{
-			ActiveItem?.TryClose();
-
-			if (_selectedAccount == null)
+			get => _arcPath;
+			set
 			{
-				return;
+				_arcPath = value;
+				NotifyOfPropertyChange(() => ArcPath);
 			}
-
-			ActiveItem = _selectedAccount.Name == CreateName
-				? new EditableViewModel(new Account(), EditingState.CREATING)
-				: new EditableViewModel(new Account
-				{
-					Name = _selectedAccount.Name,
-					Email = _selectedAccount.Email,
-					Password = _selectedAccount.Password
-				}, EditingState.EDITING);
 		}
 
-		public void Settings()
-		{
-			SelectedAccount = null;
-			ActiveItem = new SettingsViewModel(ArcPath);
-		}
-
+		/// <summary>
+		/// Выбранный аккаунт
+		/// </summary>
 		public Account SelectedAccount
 		{
 			get => _selectedAccount;
@@ -334,6 +380,9 @@
 			}
 		}
 
+		/// <summary>
+		/// Список аккаунтов
+		/// </summary>
 		public BindableCollection<Account> Accounts
 		{
 			get => _accounts;
@@ -344,23 +393,16 @@
 			}
 		}
 
+		/// <summary>
+		/// Аккаунт заглушка для создания игровых аккаунтов
+		/// </summary>
 		public Account CreatingAccount => new Account
 		{
 			Name = "Добавить",
 			Visibility = Visibility.Hidden
 		};
 
+		#endregion
 
-		private Screen _editableScreen;
-
-		public Screen EditableScreen
-		{
-			get => _editableScreen;
-			set
-			{
-				_editableScreen = value;
-				NotifyOfPropertyChange(() => EditableScreen);
-			}
-		}
 	}
 }

@@ -7,8 +7,11 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:FWUtility"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="MainView"
+    Title="Forsaken World Utility"
     WindowStartupLocation="CenterScreen"
+    TitleCharacterCasing="Normal"
+    ShowIconOnTitleBar="True"
+    Icon="../FWU.ico"
     WindowState="{Binding WindowState}"
     Width="800"
     Height="450"
@@ -46,7 +49,6 @@
                             FontSize="20"
                             Text="{Binding Name}" />
                     </DockPanel>
-
                 </ItemContainerTemplate>
             </ListBox.ItemTemplate>
         </ListBox>

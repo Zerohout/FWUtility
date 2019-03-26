@@ -11,7 +11,7 @@ namespace FWUtility.Helpers
 			CREATING
 		}
 
-		public const string CreateName = "Добавить";
+		public const string CreatingName = "Добавить";
 		public const string ArcPathString = "Путь до папки Arc";
 		public const string ArcEndPath = @"\Arc.exe";
 		public const string LauncherEndPath = @"\ArcLauncher.exe";

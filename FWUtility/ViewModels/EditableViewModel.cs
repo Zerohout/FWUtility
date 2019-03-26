@@ -11,11 +11,12 @@
 	public class EditableViewModel : Screen
 	{
 		private Account _editingAccount;
-		private BindableCollection<Account> ParentAccounts => (Parent as MainViewModel)?.Accounts;
 
-		public Visibility CreatingVisibility { get; set; }
-		public Visibility EditingVisibility { get; set; }
-
+		/// <summary>
+		/// Конструктор
+		/// </summary>
+		/// <param name="editingAccount">Изменяемый аккаунт</param>
+		/// <param name="currentState">Текущий режим</param>
 		public EditableViewModel(Account editingAccount, EditingState currentState)
 		{
 			_editingAccount = editingAccount;
@@ -32,8 +33,11 @@
 			}
 		}
 
-		#region Buttons Actions
+		#region Buttons
 
+		/// <summary>
+		/// Кнопка Создать
+		/// </summary>
 		public async void CreateAccount()
 		{
 			using (var ctx = new FWUDbContext())
@@ -41,28 +45,32 @@
 				ctx.Accounts.Add(_editingAccount);
 				await ctx.SaveChangesAsync();
 			}
-			(Parent as MainViewModel)?.LoadData();
+			
+			(Parent as MainViewModel)?.LoadAccountData();
 		}
 
-		public bool CanCreateAccount => AccountValidation;
+		public bool CanCreateAccount => EditAccountValidation;
 
+
+		/// <summary>
+		/// Кнопка Изменить
+		/// </summary>
 		public async void EditAccount()
 		{
-			((MainViewModel)Parent).SelectedAccount.Name = _editingAccount.Name;
-			((MainViewModel)Parent).SelectedAccount.Email = _editingAccount.Email;
-			((MainViewModel)Parent).SelectedAccount.Password = _editingAccount.Password;
-
 			using (var ctx = new FWUDbContext())
 			{
-				ctx.Entry(((MainViewModel)Parent).SelectedAccount).State = EntityState.Modified;
+				ctx.Entry(_editingAccount).State = EntityState.Modified;
 				await ctx.SaveChangesAsync();
 			}
 
-			((MainViewModel)Parent).LoadData();
+			((MainViewModel)Parent).LoadAccountData();
 		}
 
-		public bool CanEditAccount => AccountValidation;
+		public bool CanEditAccount => EditAccountValidation;
 
+		/// <summary>
+		/// Кнопка Удалить
+		/// </summary>
 		public async void RemoveAccount()
 		{
 			var wm = new WindowManager();
@@ -78,28 +86,27 @@
 					await ctx.SaveChangesAsync();
 				}
 
-				((MainViewModel)Parent).LoadData();
+				((MainViewModel)Parent).LoadAccountData();
 			}
 		}
 
+		public bool CanRemoveAccount => 
+			ParentAccounts.Any(p => p.Name == _editingAccount.Name)
+			&& ParentAccounts.Any(p => p.Email == _editingAccount.Email)
+			&& ParentAccounts.Any(p => p.Password == _editingAccount.Password);
+
+		/// <summary>
+		/// Кнопка Отменить
+		/// </summary>
 		public void Cancel() { ((MainViewModel)Parent).SelectedAccount = null; }
 
 		#endregion
+		
+		#region Properties
 
-		public void TextChanged()
-		{
-			NotifyOfPropertyChange(() => CanCreateAccount);
-			NotifyOfPropertyChange(() => CanEditAccount);
-		}
-
-		private bool AccountValidation =>
-			(!string.IsNullOrWhiteSpace(_editingAccount.Name)
-			 && !string.IsNullOrWhiteSpace(_editingAccount.Email)
-			 && !string.IsNullOrWhiteSpace(_editingAccount.Password))
-			&& (ParentAccounts.All(p => p.Name != _editingAccount.Name)
-				&& ParentAccounts.All(p => p.Email != _editingAccount.Email))
-			&& _editingAccount.Name != CreateName;
-
+		/// <summary>
+		/// Редактируемый аккаунт
+		/// </summary>
 		public Account EditingAccount
 		{
 			get => _editingAccount;
@@ -109,5 +116,59 @@
 				NotifyOfPropertyChange(() => EditingAccount);
 			}
 		}
+
+		/// <summary>
+		/// Список аккаунтов в родительской модели представления
+		/// </summary>
+		private BindableCollection<Account> ParentAccounts => (Parent as MainViewModel)?.Accounts;
+
+		/// <summary>
+		/// Свойство Visibility в режиме Создания
+		/// </summary>
+		public Visibility CreatingVisibility { get; set; }
+
+		/// <summary>
+		/// Свойство Visibility в режиме Редактирования
+		/// </summary>
+		public Visibility EditingVisibility { get; set; }
+
+		/// <summary>
+		/// Определение изменения данных аккаунта
+		/// </summary>
+		private bool EditAccountValidation
+		{
+			get
+			{
+				if (string.IsNullOrWhiteSpace(_editingAccount.Name)
+				    || string.IsNullOrWhiteSpace(_editingAccount.Email)
+				    || string.IsNullOrWhiteSpace(_editingAccount.Password)
+				    || _editingAccount.Name == CreatingName)
+				{
+					return false;
+				}
+
+				if (ParentAccounts.Any(p => p.Name == _editingAccount.Name) ||
+				    ParentAccounts.Any(p => p.Email == _editingAccount.Email))
+				{
+					return false;
+				}
+
+				return true;
+			}
+		}
+
+		#endregion
+
+		#region Actions
+
+		public void TextChanged()
+		{
+			NotifyOfPropertyChange(() => CanCreateAccount);
+			NotifyOfPropertyChange(() => CanEditAccount);
+			NotifyOfPropertyChange(() => CanRemoveAccount);
+		}
+
+		#endregion
+
 	}
 }

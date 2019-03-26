@@ -9,11 +9,12 @@
 		public FWUDbContext() : base("FWUDb")
 		{
 			AppDomain.CurrentDomain.SetData("DataDirectory", AppDomain.CurrentDomain.BaseDirectory);
-
+			
 			Database.CreateIfNotExists();
-
-			//Database.SetInitializer(new DropCreateDatabaseAlways<EF6DbContext>());
-			Database.SetInitializer(new DropCreateDatabaseIfModelChanges<FWUDbContext>());
+			
+			//Database.SetInitializer(new DropCreateDatabaseAlways<FWUDbContext>());
+			//Database.SetInitializer(new DropCreateDatabaseIfModelChanges<FWUDbContext>());
+			
 		}
 
 		public DbSet<Account> Accounts { get; set; }

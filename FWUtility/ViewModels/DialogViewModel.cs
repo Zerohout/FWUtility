@@ -22,6 +22,13 @@
 			OK
 		}
 
+		/// <summary>
+		/// Конструктор
+		/// </summary>
+		/// <param name="firstMessage">Первое сообщение</param>
+		/// <param name="dialogType">Режим</param>
+		/// <param name="secondMessage">Недоступно</param>
+		/// <param name="thirdMessage">Недоступно</param>
 		public DialogViewModel(
 			string firstMessage, DialogType dialogType,
 			string secondMessage = null, string thirdMessage = null)
@@ -50,26 +57,47 @@
 			}
 		}
 
-		public void YesAction()
+		#region Buttons
+
+		/// <summary>
+		/// Кнопка "Да, конечно"
+		/// </summary>
+		public void Yes()
 		{
 			TryClose(true);
 		}
 
-		public void OkAction()
+		/// <summary>
+		/// Кнопка "Я понял"
+		/// </summary>
+		public void Ok()
 		{
 			TryClose(true);
 		}
 
-		public void CancelAction()
+		/// <summary>
+		/// Кнопка "Я передумал"
+		/// </summary>
+		public void Cancel()
 		{
 			TryClose(false);
 		}
 
-		public void NoAction()
+		/// <summary>
+		/// Кнопка "Нет, что вы"
+		/// </summary>
+		public void No()
 		{
 			TryClose(false);
 		}
 
+		#endregion
+
+		#region Properties
+
+		/// <summary>
+		/// Первое сообщение
+		/// </summary>
 		public string FirstMessage
 		{
 			get => _firstMessage;
@@ -80,6 +108,9 @@
 			}
 		}
 
+		/// <summary>
+		/// Второе сообщение
+		/// </summary>
 		public string SecondMessage
 		{
 			get => _secondMessage;
@@ -90,6 +121,9 @@
 			}
 		}
 
+		/// <summary>
+		/// Третье сообщение
+		/// </summary>
 		public string ThirdMessage
 		{
 			get => _thirdMessage;
@@ -100,6 +134,9 @@
 			}
 		}
 
+		/// <summary>
+		/// Свойство Visibility в режиме Yes_No и Yes_Cancel_No
+		/// </summary>
 		public Visibility YesNoVisibility
 		{
 			get => _yesNoVisibility;
@@ -110,6 +147,9 @@
 			}
 		}
 
+		/// <summary>
+		/// Свойство Visibility в режиме Ok
+		/// </summary>
 		public Visibility OkVisibility
 		{
 			get => _okVisibility;
@@ -120,6 +160,9 @@
 			}
 		}
 
+		/// <summary>
+		/// Свойство Visibility в режиме Yes_Cancel_No
+		/// </summary>
 		public Visibility CancelVisibility
 		{
 			get => _cancelVisibility;
@@ -129,5 +172,8 @@
 				NotifyOfPropertyChange(() => CancelVisibility);
 			}
 		}
+
+		#endregion
+		
 	}
 }

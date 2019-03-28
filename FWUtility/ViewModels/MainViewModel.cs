@@ -1,7 +1,6 @@
 ﻿namespace FWUtility.ViewModels
 {
 	using System;
-	using System.ComponentModel;
 	using System.Data.Entity;
 	using System.Diagnostics;
 	using System.IO;
@@ -22,6 +21,7 @@
 	{
 		private WindowState _windowState;
 		private string _arcPath;
+		private string _fwPath;
 		private BindableCollection<Account> _accounts = new BindableCollection<Account>();
 		private Account _selectedAccount;
 
@@ -55,23 +55,29 @@
 		/// </summary>
 		public async void LoadPathData()
 		{
-			if (!File.Exists(ArcPathDirectory))
+			if (!File.Exists(FWUDataDirectory))
 			{
-				using (var fs = new FileStream(ArcPathDirectory, FileMode.Create))
+				using (var fs = new FileStream(FWUDataDirectory, FileMode.Create))
 				{
 					fs.Dispose();
 				}
 
-				using (var sw = new StreamWriter(ArcPathDirectory))
+				using (var sw = new StreamWriter(FWUDataDirectory))
 				{
 					await sw.WriteAsync(@"C:\Program Files (x86)\Arc");
+					await sw.WriteAsync(sw.NewLine);
+					await sw.WriteAsync(@"C:\Program Files (x86)\Forsaken World_en");
+					await sw.WriteAsync(sw.NewLine);
+					await sw.WriteAsync("false");
 				}
 			}
 			else
 			{
-				using (var sr = new StreamReader(ArcPathDirectory))
+				using (var sr = new StreamReader(FWUDataDirectory))
 				{
 					ArcPath = await sr.ReadLineAsync();
+					FWPath = await sr.ReadLineAsync();
+					AlternativeLaunch = bool.Parse(await sr.ReadLineAsync());
 				}
 			}
 		}
@@ -118,7 +124,7 @@
 		}
 
 		#endregion
-		
+
 		#region Buttons
 
 		/// <summary>
@@ -127,7 +133,7 @@
 		public void Settings()
 		{
 			SelectedAccount = null;
-			ActiveItem = new SettingsViewModel(ArcPath);
+			ActiveItem = new SettingsViewModel(ArcPath, FWPath, AlternativeLaunch);
 		}
 
 		/// <summary>
@@ -142,6 +148,14 @@
 			{
 				wm.ShowDialog(new DialogViewModel(
 								  $"{ArcPathString} некорректный. Измените его в настройках",
+								  DialogViewModel.DialogType.OK));
+				return;
+			}
+
+			if (AlternativeLaunch && !Directory.Exists(FWPath))
+			{
+				wm.ShowDialog(new DialogViewModel(
+								  $"{FWPathString} некорректный. Измените его в настройках",
 								  DialogViewModel.DialogType.OK));
 				return;
 			}
@@ -162,8 +176,6 @@
 			}
 
 			PemIds.Clear();
-
-			var bw = new BackgroundWorker();
 
 			await Task.Run(StartWorking);
 
@@ -198,7 +210,9 @@
 		{
 			var sim = new InputSimulator();
 
-			Process.Start($"{ArcPath}{ArcEndPath}");
+			Process.Start(AlternativeLaunch
+				              ? $"{FWPath}{FWEndPath}"
+				              : $"{ArcPath}{ArcEndPath}");
 
 			var arcId = await WaitingStartArcProcess();
 			await Task.Yield();
@@ -207,11 +221,15 @@
 
 			await Task.Yield();
 
-			await WaitingProccess("ArcChat");
+			if (!AlternativeLaunch)
+			{
+				await WaitingProccess("ArcChat");
 
-			Process.Start($"{ArcPath}{LauncherEndPath}", LauncherParameter);
+				Process.Start($"{ArcPath}{LauncherEndPath}", LauncherParameter);
 
-			await Task.Yield();
+				await Task.Yield();
+			}
+			
 			await WaitingProccess("patcher");
 
 			for (var i = 0; i < 11; i++)
@@ -255,21 +273,11 @@
 
 			while (working)
 			{
-				foreach (var p in Process.GetProcesses())
+				if (AlternativeLaunch)
 				{
-					if (p.ProcessName == "Arc")
+					foreach (var p in Process.GetProcesses())
 					{
-						if (arcId == 0 || arcId == p.Id)
-						{
-							if (arcId == 0)
-							{
-								arcId = p.Id;
-							}
-
-							break;
-						}
-
-						if (arcId != p.Id)
+						if (p.ProcessName == "Arc")
 						{
 							arcId = p.Id;
 							working = false;
@@ -277,8 +285,34 @@
 						}
 					}
 				}
+				else
+				{
+					foreach (var p in Process.GetProcesses())
+					{
+						if (p.ProcessName == "Arc")
+						{
+							if (arcId == 0 || arcId == p.Id)
+							{
+								if (arcId == 0)
+								{
+									arcId = p.Id;
+								}
 
-				Thread.Sleep(500);
+								break;
+							}
+
+							if (arcId != p.Id)
+							{
+								arcId = p.Id;
+								working = false;
+								break;
+							}
+						}
+					}
+				}
+				
+
+				Thread.Sleep(1000);
 			}
 
 			return Task.FromResult(arcId);
@@ -336,7 +370,7 @@
 					sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
 				}
 
-				Thread.Sleep(3000);
+				Thread.Sleep(5000);
 				counter++;
 			}
 
@@ -369,7 +403,6 @@
 
 		#endregion
 
-
 		#endregion
 
 		#region Properties
@@ -396,6 +429,29 @@
 				NotifyOfPropertyChange(() => ArcPath);
 			}
 		}
+
+		public string FWPath
+		{
+			get => _fwPath;
+			set
+			{
+				_fwPath = value;
+				NotifyOfPropertyChange(() => FWPath);
+			}
+		}
+
+		private bool _alternativeLaunch;
+
+		public bool AlternativeLaunch
+		{
+			get => _alternativeLaunch;
+			set
+			{
+				_alternativeLaunch = value;
+				NotifyOfPropertyChange(() => AlternativeLaunch);
+			}
+		}
+
 
 		/// <summary>
 		/// Выбранный аккаунт

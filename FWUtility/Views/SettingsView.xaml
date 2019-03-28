@@ -15,33 +15,42 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <TextBlock
-            Margin="0,5"
-            HorizontalAlignment="Center"
-            FontFamily="Comic Sans MS"
-            FontSize="20"
-            Text="Путь до папки Arc" />
-        <Grid Grid.Row="1" Grid.Column="0">
+
+        <!--#region Row 0-->
+
+        <Grid Grid.Row="0" Grid.Column="0">
             <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-
+            <TextBlock
+                Grid.Row="0"
+                Margin="0,5"
+                HorizontalAlignment="Center"
+                FontFamily="Comic Sans MS"
+                FontSize="20"
+                Text="Путь до папки Arc" />
             <TextBox
+                Grid.Row="1"
+                Grid.Column="0"
                 Margin="5,0"
                 cal:Message.Attach="[TextChanged] = [Action TextChanged()]"
                 FontFamily="Comic Sans MS"
                 FontSize="20"
                 Text="{Binding ArcPath, UpdateSourceTrigger=PropertyChanged}" />
             <Button
-                x:Name="Browse"
+                x:Name="BrowseArc"
+                Grid.Row="1"
                 Grid.Column="1"
                 Margin="5,0"
                 HorizontalAlignment="Right">
@@ -49,10 +58,78 @@
             </Button>
         </Grid>
 
-        <Grid
-            Grid.Row="2"
-            Grid.Column="0"
-            Margin="0,5">
+        <!--#endregion-->
+
+        <!--#region Row 1-->
+
+        <Grid Grid.Row="1" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                Grid.Row="0"
+                Margin="0,5"
+                HorizontalAlignment="Center"
+                FontFamily="Comic Sans MS"
+                FontSize="20"
+                Text="Путь до папки Forsaken World" />
+            <TextBox
+                Grid.Row="1"
+                Grid.Column="0"
+                Margin="5,0"
+                cal:Message.Attach="[TextChanged] = [Action TextChanged()]"
+                FontFamily="Comic Sans MS"
+                FontSize="20"
+                Text="{Binding FWPath, UpdateSourceTrigger=PropertyChanged}" />
+            <Button
+                x:Name="BrowseFW"
+                Grid.Row="1"
+                Grid.Column="1"
+                Margin="5,0"
+                HorizontalAlignment="Right">
+                <iconPacks:PackIconMaterial Width="20" Kind="FileFind" />
+            </Button>
+        </Grid>
+
+        <!--#endregion-->
+
+        <!--#region Row 2-->
+
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <CheckBox
+                Grid.Column="0"
+                Margin="5"
+                
+                cal:Message.Attach="
+                [Checked] = [Action AlterLaunchCheckedValidation];
+                [Unchecked] = [Action AlterLaunchCheckedValidation];"
+                IsChecked="{Binding AlternativeLaunch}" />
+            <TextBlock
+                Grid.Column="1"
+                Margin="0,5"
+                FontFamily="Comic Sans MS"
+                FontSize="20"
+                Text="Альтернативный запуск" />
+        </Grid>
+
+        <!--#endregion-->
+
+        <!--#region Row 4-->
+
+        <Grid Grid.Row="4" Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
@@ -64,7 +141,7 @@
                 x:Name="SavePaths"
                 Grid.Row="0"
                 Grid.Column="0"
-                Margin="10,0,10,5">
+                Margin="5,0,5,5">
                 <TextBlock
                     FontFamily="Comic Sans MS"
                     FontSize="20"
@@ -73,14 +150,15 @@
             <Button
                 x:Name="Cancel"
                 Grid.Row="1"
-                Margin="10,0,10,5">
+                Margin="5,0,5,5">
                 <TextBlock
                     FontFamily="Comic Sans MS"
                     FontSize="20"
                     Text="Отменить" />
             </Button>
-
         </Grid>
+
+        <!--#endregion-->
 
     </Grid>
 </UserControl>

@@ -107,7 +107,7 @@
 		/// <summary>
 		/// Обозреватель папок
 		/// </summary>
-		public void ArcBrowse()
+		public void BrowseArc()
 		{
 			var fbd = new FolderBrowserDialog
 			{
@@ -120,7 +120,7 @@
 			}
 		}
 
-		public void FWBrowse()
+		public void BrowseFW()
 		{
 			var fbd = new FolderBrowserDialog
 			{

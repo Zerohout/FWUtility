@@ -65,7 +65,7 @@
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>FWUIcon.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\FWUIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>D482C125D9408AD5ABEE30CA5A92CFB900BB25E3</ManifestCertificateThumbprint>
@@ -310,16 +310,15 @@
     <Resource Include="qqinternationaltencentlogo_114719.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="FWU.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="FWUIcon.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\FWUtilityBackground.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\FWUTitleIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\FWUIcon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>

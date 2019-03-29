@@ -21,7 +21,8 @@
     <Window.Resources>
         <Style TargetType="{x:Type ListBoxItem}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="DarkRed"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Foreground" Value="#BE0003"/>
             <Setter Property="FontFamily" Value="Comic Sans MS"/>
             <Setter Property="FontSize" Value="20"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -57,30 +58,42 @@
             VerticalAlignment="Center"
             HorizontalAlignment="Center"
             Panel.ZIndex="0"/>
-        <ListBox Panel.ZIndex="1"
-            Grid.Row="0"
-            Grid.Column="0"
-            AllowDrop="True"
-            Margin="5"
-            SelectionMode="Single"
-            cal:Message.Attach="[SelectionChanged] = [Action SelectionChanged]"
-            ItemsSource="{Binding Accounts, UpdateSourceTrigger=PropertyChanged}"
-            SelectedItem="{Binding SelectedAccount}"
-            Background="Transparent">
-            <ListBox.ItemTemplate>
-                <ItemContainerTemplate>
-                    <DockPanel>
-                        <CheckBox DockPanel.Dock="Left"
-                            IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}"
-                            cal:Message.Attach="[Checked] = [Action CheckedValidation()];[Unchecked] = [Action CheckedValidation()]"
-                            Visibility="{Binding Visibility}"/>
-                        <TextBlock HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Text="{Binding Name}"/>
-                    </DockPanel>
-                </ItemContainerTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <Grid Grid.Row="0"
+              Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="85"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <ListBox Panel.ZIndex="1"
+                     Grid.Row="1"
+                     Grid.Column="0"
+                     AllowDrop="True"
+                     Margin="5"
+                     SelectionMode="Single"
+                     cal:Message.Attach="[SelectionChanged] = [Action SelectionChanged]"
+                     ItemsSource="{Binding Accounts, UpdateSourceTrigger=PropertyChanged}"
+                     SelectedItem="{Binding SelectedAccount}"
+                     Background="Transparent">
+                <ListBox.ItemTemplate>
+                    <ItemContainerTemplate>
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Left"
+                                      IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}"
+                                      cal:Message.Attach="[Checked] = [Action CheckedValidation()];[Unchecked] = [Action CheckedValidation()]"
+                                      Visibility="{Binding Visibility}"/>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Text="{Binding Name}"/>
+                        </DockPanel>
+                    </ItemContainerTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+        
 
         <ContentControl x:Name="ActiveItem"
             Grid.Row="0"

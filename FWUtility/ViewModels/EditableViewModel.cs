@@ -12,6 +12,8 @@
 	{
 		private Account _editingAccount;
 
+		private Visibility _errorVisibility;
+		
 		/// <summary>
 		/// Конструктор
 		/// </summary>
@@ -20,6 +22,7 @@
 		public EditableViewModel(Account editingAccount, EditingState currentState)
 		{
 			_editingAccount = editingAccount;
+			ErrorVisibility = Visibility.Hidden;
 
 			if (currentState == EditingState.CREATING)
 			{
@@ -101,8 +104,21 @@
 		public void Cancel() { ((MainViewModel)Parent).SelectedAccount = null; }
 
 		#endregion
-		
+
 		#region Properties
+
+		/// <summary>
+		/// Свойство Visibility у ошибки ввода названия
+		/// </summary>
+		public Visibility ErrorVisibility
+		{
+			get => _errorVisibility;
+			set
+			{
+				_errorVisibility = value;
+				NotifyOfPropertyChange(() => ErrorVisibility);
+			}
+		}
 
 		/// <summary>
 		/// Редактируемый аккаунт
@@ -141,7 +157,12 @@
 			{
 				if (string.IsNullOrWhiteSpace(_editingAccount.Name)
 				    || string.IsNullOrWhiteSpace(_editingAccount.Email)
-				    || string.IsNullOrWhiteSpace(_editingAccount.Password)
+				    || string.IsNullOrWhiteSpace(_editingAccount.Password))
+				{
+					return false;
+				}
+
+				if (_editingAccount.Name.Length > 9
 				    || _editingAccount.Name == CreatingName)
 				{
 					return false;
@@ -164,7 +185,12 @@
 			{
 				if (string.IsNullOrWhiteSpace(_editingAccount.Name)
 				    || string.IsNullOrWhiteSpace(_editingAccount.Email)
-				    || string.IsNullOrWhiteSpace(_editingAccount.Password)
+				    || string.IsNullOrWhiteSpace(_editingAccount.Password))
+				{
+					return false;
+				}
+
+				if (_editingAccount.Name.Length > 9 
 				    || _editingAccount.Name == CreatingName)
 				{
 					return false;
@@ -186,6 +212,16 @@
 
 		public void TextChanged()
 		{
+			if (_editingAccount.Name.Length > 9)
+			{
+				ErrorVisibility = Visibility.Visible;
+			}
+
+			if (_editingAccount.Name.Length <= 9 
+			    && ErrorVisibility == Visibility.Visible)
+			{
+				ErrorVisibility = Visibility.Hidden;
+			}
 			NotifyOfPropertyChange(() => CanCreateAccount);
 			NotifyOfPropertyChange(() => CanEditAccount);
 			NotifyOfPropertyChange(() => CanRemoveAccount);

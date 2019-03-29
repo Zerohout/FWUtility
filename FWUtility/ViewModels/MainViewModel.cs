@@ -344,7 +344,6 @@
 			await Task.Yield();
 
 			var sim = new InputSimulator();
-			sim.Keyboard.Sleep(5000);
 			sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
 			sim.Keyboard.Sleep(500);
 			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.SHIFT, VirtualKeyCode.END);

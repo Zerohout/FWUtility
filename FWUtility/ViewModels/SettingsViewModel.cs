@@ -147,11 +147,6 @@
 		public string FWPathTemp { get; set; }
 
 		/// <summary>
-		/// Сохраненный статус альтернативного запуска игры
-		/// </summary>
-		public bool AlterLaunchTemp { get; set; }
-
-		/// <summary>
 		/// Путь до папки Arc
 		/// </summary>
 		public string ArcPath

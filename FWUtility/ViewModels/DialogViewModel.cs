@@ -72,7 +72,7 @@
 		/// </summary>
 		public void Ok()
 		{
-			TryClose(true);
+			TryClose();
 		}
 
 		/// <summary>

@@ -65,7 +65,7 @@
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>FWU.ico</ApplicationIcon>
+    <ApplicationIcon>FWUIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>D482C125D9408AD5ABEE30CA5A92CFB900BB25E3</ManifestCertificateThumbprint>
@@ -173,6 +173,7 @@
       <DependentUpon>201903242242266_RemovePathModel.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\Account.cs" />
+    <Compile Include="Models\ServiceProperty.cs" />
     <Compile Include="ViewModels\DialogViewModel.cs" />
     <Compile Include="ViewModels\EditableViewModel.cs" />
     <Compile Include="ViewModels\SettingsViewModel.cs" />
@@ -310,6 +311,17 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="FWU.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="FWUIcon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\FWUtilityBackground.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\FWUTitleIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

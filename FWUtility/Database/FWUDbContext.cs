@@ -13,7 +13,7 @@
 			Database.CreateIfNotExists();
 			
 			//Database.SetInitializer(new DropCreateDatabaseAlways<FWUDbContext>());
-			//Database.SetInitializer(new DropCreateDatabaseIfModelChanges<FWUDbContext>());
+			Database.SetInitializer(new DropCreateDatabaseIfModelChanges<FWUDbContext>());
 			
 		}
 

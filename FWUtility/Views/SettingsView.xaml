@@ -14,7 +14,6 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -99,35 +98,7 @@
 
         <!--#endregion-->
 
-        <!--#region Row 2-->
-
-        <Grid Grid.Row="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <CheckBox
-                Grid.Column="0"
-                Margin="5"
-                
-                cal:Message.Attach="
-                [Checked] = [Action AlterLaunchCheckedValidation];
-                [Unchecked] = [Action AlterLaunchCheckedValidation];"
-                IsChecked="{Binding AlternativeLaunch}" />
-            <TextBlock
-                Grid.Column="1"
-                Margin="0,5"
-                FontFamily="Comic Sans MS"
-                FontSize="20"
-                Text="Альтернативный запуск" />
-        </Grid>
-
-        <!--#endregion-->
-
-        <!--#region Row 4-->
+        <!--#region Row 3-->
 
         <Grid Grid.Row="4" Grid.Column="0">
             <Grid.RowDefinitions>

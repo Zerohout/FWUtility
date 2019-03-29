@@ -11,15 +11,13 @@
 	{
 		private string _arcPath;
 		private string _fwPath;
-		private bool _alternativeLaunch;
 
 		/// <summary>
 		/// Конструктор
 		/// </summary>
 		/// <param name="arcPath">Путь до папки Arc</param>
 		/// <param name="fwPath">Путь до папки Forsaken World</param>
-		/// <param name="alterLaunch">Статус Альтернативного запуска</param>
-		public SettingsViewModel(string arcPath, string fwPath, bool alterLaunch)
+		public SettingsViewModel(string arcPath, string fwPath)
 		{
 			ArcPathTemp = arcPath;
 			ArcPath = !Directory.Exists(arcPath)
@@ -29,11 +27,8 @@
 			FWPath = !Directory.Exists(fwPath)
 				? $"Укажите {FWPathString}"
 				: fwPath;
-			AlterLaunchTemp = alterLaunch;
-			AlternativeLaunch = alterLaunch;
-
 		}
-		
+
 		#region Buttons
 
 		/// <summary>
@@ -65,14 +60,11 @@
 				await sw.WriteAsync(ArcPath);
 				await sw.WriteAsync(sw.NewLine);
 				await sw.WriteAsync(FWPath);
-				await sw.WriteAsync(sw.NewLine);
-				await sw.WriteAsync(AlternativeLaunch.ToString());
 			}
 
 			((MainViewModel)Parent).LoadPathData();
 			ArcPathTemp = ArcPath;
 			FWPathTemp = FWPath;
-			AlterLaunchTemp = AlternativeLaunch;
 
 			NotifyOfPropertyChange(() => CanSavePaths);
 		}
@@ -82,20 +74,19 @@
 			get
 			{
 				if (string.IsNullOrWhiteSpace(ArcPath) ||
-				    string.IsNullOrWhiteSpace(FWPath))
+					string.IsNullOrWhiteSpace(FWPath))
 				{
 					return false;
 				}
 
 				if (ArcPath == ArcPathTemp &&
-				    FWPath == FWPathTemp &&
-				    AlternativeLaunch == AlterLaunchTemp)
+					FWPath == FWPathTemp)
 				{
 					return false;
 				}
 
 				if (ArcPath == $"Укажите {ArcPathString}" ||
-				    FWPath == $"Укажите {FWPathString}")
+					FWPath == $"Укажите {FWPathString}")
 				{
 					return false;
 				}
@@ -159,7 +150,7 @@
 		/// Сохраненный статус альтернативного запуска игры
 		/// </summary>
 		public bool AlterLaunchTemp { get; set; }
-		
+
 		/// <summary>
 		/// Путь до папки Arc
 		/// </summary>
@@ -172,7 +163,7 @@
 				NotifyOfPropertyChange(() => ArcPath);
 			}
 		}
-		
+
 		/// <summary>
 		/// Путь до папки Forsaken World
 		/// </summary>
@@ -185,20 +176,7 @@
 				NotifyOfPropertyChange(() => FWPath);
 			}
 		}
-		
-		/// <summary>
-		/// Альтернативный запуск игры
-		/// </summary>
-		public bool AlternativeLaunch
-		{
-			get => _alternativeLaunch;
-			set
-			{
-				_alternativeLaunch = value;
-				NotifyOfPropertyChange(() => AlternativeLaunch);
-			}
-		}
-		
+
 		#endregion
 
 		#region Actions
@@ -207,14 +185,6 @@
 		/// Действие при изменении текста
 		/// </summary>
 		public void TextChanged()
-		{
-			NotifyOfPropertyChange(() => CanSavePaths);
-		}
-
-		/// <summary>
-		/// Действие при изменение CheckBox'а "Альтернативный запуск"
-		/// </summary>
-		public void AlterLaunchCheckedValidation()
 		{
 			NotifyOfPropertyChange(() => CanSavePaths);
 		}

@@ -286,20 +286,9 @@
 			Thread.Sleep(2000);
 
 			await StartGame();
-			
-			var arc = Process.GetProcessById(arcId);
-			arc.Kill();
 
-			while (true)
-			{
-				if (arc.HasExited)
-				{
-					break;
-				}
+			await KillArc();
 
-				Thread.Sleep(1000);
-			}
-			
 			ShowWindow(Process.GetProcessById(PemIds.Last()).MainWindowHandle, 6);
 		}
 
@@ -330,7 +319,7 @@
 				Thread.Sleep(2000);
 			}
 
-			Thread.Sleep(2000);
+			Thread.Sleep(5000);
 
 			return await Task.FromResult(arcId);
 		}
@@ -344,6 +333,7 @@
 			await Task.Yield();
 
 			var sim = new InputSimulator();
+			sim.Keyboard.Sleep(2000);
 			sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
 			sim.Keyboard.Sleep(500);
 			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.SHIFT, VirtualKeyCode.END);
@@ -378,7 +368,7 @@
 			
 			await DetectProccess("Forsaken World -");
 
-			sim.Keyboard.Sleep(500);
+			sim.Keyboard.Sleep(1000);
 			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
 		}
 
@@ -398,12 +388,13 @@
 				{
 					if (p.MainWindowTitle.Contains(proccessName))
 					{
-						if (proccessName == "Forsaken World -")
+						if (!PemIds.Contains(p.Id) 
+						    && proccessName == "Forsaken World -")
 						{
 							PemIds.Add(p.Id);
+							counter = 12;
+							break;
 						}
-						counter = 12;
-						break;
 					}
 				}
 

@@ -32,8 +32,7 @@
 		private BindableCollection<Account> _accounts = new BindableCollection<Account>();
 		private Account _selectedAccount;
 
-		[DllImport("user32.dll")]
-		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+		
 
 		public MainViewModel()
 		{
@@ -231,6 +230,16 @@
 				IsRusLaunch = true;
 			}
 
+			foreach (var p in Process.GetProcessesByName("pem"))
+			{
+				PemIds.Add(p.Id);
+
+				foreach (var pr in Process.GetProcessesByName("ArcOSOverlay"))
+				{
+					OverlayIds.Add(pr.Id);
+				}
+			}
+
 			foreach (var acc in CheckedAccounts)
 			{
 				try
@@ -242,6 +251,8 @@
 					ShowError($"{ex.Message}\r{ex.StackTrace}");
 					break;
 				}
+
+				Thread.Sleep(2000);
 			}
 		}
 
@@ -269,6 +280,7 @@
 				EnterToGame();
 
 				KillProcByName("Arc");
+				Thread.Sleep(500);
 				ShowWindow(Process.GetProcessById(PemIds.Last()).MainWindowHandle, 6);
 			}
 			catch (Exception ex)
@@ -329,7 +341,7 @@
 				}
 				else
 				{
-					if (cycle == 15 && !idle)
+					if (cycle == 20 && !idle)
 					{
 						if (firstProcessorIdle)
 						{
@@ -338,12 +350,65 @@
 						}
 						else
 						{
+							
+							
 							return;
 						}
 					}
 				}
 
 				Thread.Sleep(50);
+			}
+		}
+
+		/// <summary>
+		/// Ожидание запуска самой игры
+		/// </summary>
+		/// <returns></returns>
+		private void EnterToGame()
+		{
+			if (token.IsCancellationRequested) return;
+
+			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.LMENU, VirtualKeyCode.F4);
+
+			Thread.Sleep(3000);
+
+			for (var i = 0; i < 1; i++)
+			{
+				sim.Keyboard.Sleep(500);
+				sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
+			}
+
+			sim.Keyboard.Sleep(500);
+			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+
+			for (var i = 0; i < 30; i++)
+			{
+				foreach (var p in Process.GetProcesses())
+				{
+					if (p.ProcessName == "ArcOSOverlay" && !OverlayIds.Contains(p.Id))
+					{
+						OverlayIds.Add(p.Id);
+
+						if (OverlayIds.Count == PemIds.Count * 2 + 2)
+						{
+							sim.Keyboard.Sleep(1000);
+							sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+
+							foreach (var proc in Process.GetProcessesByName("pem"))
+							{
+								if (PemIds.Contains(proc.Id)) continue;
+
+								PemIds.Add(proc.Id);
+							}
+
+							Thread.Sleep(500);
+							return;
+						}
+					}
+				}
+
+				Thread.Sleep(1000);
 			}
 		}
 
@@ -355,6 +420,11 @@
 		{
 			if (token.IsCancellationRequested) return;
 
+			sim.Keyboard.Sleep(1000);
+			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.LMENU, VirtualKeyCode.TAB);
+			sim.Keyboard.Sleep(1000);
+			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.LMENU, VirtualKeyCode.TAB);
+			sim.Keyboard.Sleep(1000);
 			sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
 			sim.Keyboard.Sleep(500);
 			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.SHIFT, VirtualKeyCode.END);
@@ -406,6 +476,7 @@
 				{
 					if (processes.First().HasExited)
 					{
+						Thread.Sleep(2000);
 						return;
 					}
 
@@ -448,56 +519,6 @@
 			Application.Current.Dispatcher.Invoke(
 				() => wm.ShowDialog(
 					new DialogViewModel(error, DialogViewModel.DialogType.ERROR)));
-		}
-
-		/// <summary>
-		/// Ожидание запуска самой игры
-		/// </summary>
-		/// <returns></returns>
-		private void EnterToGame()
-		{
-			if (token.IsCancellationRequested) return;
-
-			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.LMENU, VirtualKeyCode.F4);
-
-			Thread.Sleep(3000);
-
-			for (var i = 0; i < 1; i++)
-			{
-				sim.Keyboard.Sleep(500);
-				sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
-			}
-
-			sim.Keyboard.Sleep(500);
-			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-
-			for (var i = 0; i < 30; i++)
-			{
-				foreach (var p in Process.GetProcesses())
-				{
-					if (p.ProcessName == "ArcOSOverlay" && !OverlayIds.Contains(p.Id))
-					{
-						OverlayIds.Add(p.Id);
-
-						if (OverlayIds.Count == PemIds.Count * 2 + 2)
-						{
-							sim.Keyboard.Sleep(1000);
-							sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-
-							foreach (var proc in Process.GetProcessesByName("pem"))
-							{
-								if (PemIds.Contains(proc.Id)) continue;
-
-								PemIds.Add(proc.Id);
-							}
-
-							return;
-						}
-					}
-				}
-
-				Thread.Sleep(1000);
-			}
 		}
 
 		#endregion
@@ -578,5 +599,39 @@
 
 		#endregion
 
+
+		///<summary>
+		/// Показывает окно
+		/// </summary>
+		/// <param name="hWnd">Дескриптор окна, которое нужно показать</param>
+		/// <param name="nCmdShow">Определяет, как окно отображается</param>
+		/// SW_HIDE = 0
+		/// Скрыть окно и активизировать другое окно.
+		/// SW_MAXIMIZE = 3
+		/// Развернуть окно.
+		/// SW_MINIMIZE = 6
+		/// Свернуть окно и активизировать следующее окно в Z-порядке(следующее под свернутым окном).
+		/// SW_RESTORE = 9
+		/// Активизировать и отобразить окно.Если окно свернуто или развернуто,
+		///  Windows восстанавливает его исходный размер и положение.
+		/// SW_SHOW = 5
+		/// Активизировать окно.
+		/// SW_SHOWMAXIMIZED = 3
+		/// Отобразить окно в развернутом виде.
+		/// SW_SHOWMINIMIZED = 2
+		/// Отобразить окно в свернутом виде.
+		/// SW_SHOWMINNOACTIVE = 7
+		/// Отобразить окно в свернутом виде.Активное окно остается активным.
+		/// SW_SHOWNA = 8
+		/// Отобразить окно в текущем состоянии.Активное окно остается активным.
+		/// SW_SHOWNOACTIVATE = 4
+		/// Отобразить окно в соответствии с последними значениями позиции и размера.
+		/// Активное окно остается активным.
+		/// SW_SHOWNORMAL = 1
+		/// Активизировать и отобразить окно.Если окно свернуто или развернуто,
+		/// Windows восстанавливает его исходный размер и положение.
+		/// Приложение должно указывать этот флаг при первом отображении окна.
+		[DllImport("user32.dll")]
+		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 	}
 }

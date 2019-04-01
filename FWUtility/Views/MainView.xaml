@@ -47,12 +47,13 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0.5*"/>
+            <ColumnDefinition Width="150"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Image Source="../Resources/FWUtilityBackground.png"
             Grid.Column="0"
-            Grid.ColumnSpan="2"
+            Grid.ColumnSpan="3"
             Grid.Row="0"
             Grid.RowSpan="3"
             VerticalAlignment="Center"
@@ -71,7 +72,6 @@
             <ListBox Panel.ZIndex="1"
                      Grid.Row="1"
                      Grid.Column="0"
-                     AllowDrop="True"
                      Margin="5"
                      SelectionMode="Single"
                      cal:Message.Attach="[SelectionChanged] = [Action SelectionChanged]"
@@ -98,11 +98,11 @@
         <ContentControl x:Name="ActiveItem"
             Grid.Row="0"
             Grid.RowSpan="2"
-            Grid.Column="1"/>
+            Grid.Column="2"/>
         <Button x:Name="Start"
             Grid.Column="0"
             Grid.Row="1"
-            Margin="5,0,5,5">
+            Margin="15,0,5,5">
             <TextBlock FontFamily="Comic Sans MS"
                 FontSize="20"
                 Text="Запустить"/>
@@ -110,7 +110,7 @@
         <Button x:Name="Settings"
             Grid.Column="0"
             Grid.Row="2"
-            Margin="5,0,5,5">
+            Margin="15,0,5,15">
             <TextBlock FontFamily="Comic Sans MS"
                 FontSize="20"
                 Text="Настройки"/>

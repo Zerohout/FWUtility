@@ -23,10 +23,18 @@
 		private string _arcPath;
 		private string _fwPath;
 		private bool IsRusLaunch;
+		
+		private static readonly CancellationTokenSource cts = new CancellationTokenSource();
+		private readonly CancellationToken token = cts.Token;
+		private readonly InputSimulator sim = new InputSimulator();
+		private readonly WindowManager wm = new WindowManager();
 
 		private BindableCollection<Account> _accounts = new BindableCollection<Account>();
 		private Account _selectedAccount;
-		
+
+		[DllImport("user32.dll")]
+		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
 		public MainViewModel()
 		{
 			LoadAccountData();
@@ -83,7 +91,7 @@
 		}
 
 		#endregion
-		
+
 		#region Actions
 
 		/// <summary>
@@ -102,17 +110,12 @@
 		/// </summary>
 		private void AddAccountToQueue()
 		{
-			if (CheckedAccounts.Count == 3)
-			{
-				return;
-			}
+			if (CheckedAccounts.Count == 3) return;
 
 			foreach (var a in Accounts.Where(a => a.IsChecked))
 			{
-				if (CheckedAccounts.Any(c => c.AccountId == a.AccountId))
-				{
-					continue;
-				}
+				if (CheckedAccounts
+					.Any(c => c.AccountId == a.AccountId)) continue;
 
 				CheckedAccounts.Add(a);
 			}
@@ -181,8 +184,6 @@
 		/// </summary>
 		public async void Start()
 		{
-			var wm = new WindowManager();
-
 			if (!Directory.Exists(ArcPath))
 			{
 				wm.ShowDialog(new DialogViewModel(
@@ -199,20 +200,18 @@
 				return;
 			}
 
+			KillProcByName("Arc");
+
+			PemIds.Clear();
+			OverlayIds.Clear();
+
 			WindowState = WindowState.Minimized;
 
-			await KillArc();
+			//Запуск процедуры входа в игру
+			await Task.Run(StartTask, token);
 			
-			if (FWPath.Contains("_ru"))
-			{
-				IsRusLaunch = true;
-			}
-			
-			PemIds.Clear();
-
-			await Task.Run(StartWorking);
 			Thread.Sleep(5000);
-			Application.Current.Shutdown();
+			Application.Current.Dispatcher.Invoke(Application.Current.Shutdown);
 		}
 
 		public bool CanStart =>
@@ -221,119 +220,141 @@
 
 		#region Запуск лаунчера игры(Методы)
 
-		[DllImport("user32.dll")]
-		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
 		/// <summary>
-		/// Запуск необходимого количество копий программы
+		/// Подготовка запуска лаунчера Arc
 		/// </summary>
 		/// <returns></returns>
-		private async Task StartWorking()
+		private async Task StartTask()
 		{
+			if (FWPath.Contains("_ru"))
+			{
+				IsRusLaunch = true;
+			}
+
 			foreach (var acc in CheckedAccounts)
 			{
-				await StartLauncher(acc);
-			}
-		}
-
-		private async Task KillArc()
-		{
-			await Task.Yield();
-			var arcs = Process.GetProcessesByName("Arc");
-
-			if (arcs.Length > 0)
-			{
-				arcs.First().Kill();
-				while (true)
+				try
 				{
-					if (arcs.First().HasExited)
-					{
-						break;
-					}
-					Thread.Sleep(1000);
+					await Task.Run(() => EnterAccountIntoTheGame(acc), token);
+				}
+				catch (Exception ex)
+				{
+					ShowError($"{ex.Message}\r{ex.StackTrace}");
+					break;
 				}
 			}
 		}
-		
+
 		/// <summary>
 		/// Запуск лаунчера и необходимых процессов
 		/// </summary>
 		/// <param name="currAcc"></param>
 		/// <returns></returns>
-		private async Task StartLauncher(Account currAcc)
+		private Task EnterAccountIntoTheGame(Account currAcc)
 		{
-			var sim = new InputSimulator();
-
-			Process.Start(IsRusLaunch
-							  ? $"{ArcPath}{ArcEndPath}"
-							  : $"{FWPath}{FWEndPath}");
-
-			var arcId = await StartArc();
-			
-			await LoginInGame(currAcc);
-
 			if (IsRusLaunch)
 			{
-				await DetectProccess("Arc");
-				
 				Process.Start($"{ArcPath}{LauncherEndPath}", LauncherParameter);
 			}
+			else
+			{
+				Process.Start($"{FWPath}{FWEndPath}");
+			}
 
-			await DetectProccess("Forsaken World II");
-			
-			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.LMENU, VirtualKeyCode.F4);
+			try
+			{
+				StartArcLauncher();
+				EnterAccountData(currAcc);
+				WaitGameClient();
+				EnterToGame();
 
-			Thread.Sleep(2000);
+				KillProcByName("Arc");
+				ShowWindow(Process.GetProcessById(PemIds.Last()).MainWindowHandle, 6);
+			}
+			catch (Exception ex)
+			{
+				ShowError($"{ex.Message}\r{ex.StackTrace}");
+			}
 
-			await StartGame();
-
-			await KillArc();
-
-			ShowWindow(Process.GetProcessById(PemIds.Last()).MainWindowHandle, 6);
+			return Task.CompletedTask;
 		}
 
 		/// <summary>
 		/// Ожидания полного запуска процесса Arc.exe
 		/// </summary>
 		/// <returns>Id необходимого процесса Arc</returns>
-		private async Task<int> StartArc()
+		private void StartArcLauncher()
 		{
-			await Task.Yield();
-
-			var arcId = 0;
-			var counter = 0;
-
-			while (counter < 12)
+			for (var i = 0; i < 300; i++)
 			{
 				foreach (var p in Process.GetProcesses())
 				{
-					if (p.ProcessName.Contains("crashpad"))
+					if (p.ProcessName == "Arc")
 					{
-						arcId = Process.GetProcessesByName("Arc").First().Id;
-						counter = 12;
-						break;
+						WaitArcLauncherFields(p.Id);
+						return;
 					}
 				}
 
-				counter++;
-				Thread.Sleep(2000);
+				Thread.Sleep(50);
 			}
 
-			Thread.Sleep(5000);
+			cts.Cancel();
+			throw new Exception("Процесс Arc.exe не найден.");
+		}
 
-			return await Task.FromResult(arcId);
+		/// <summary>
+		/// Ожидания игрового лаунчера для дальнейшего ввода данных аккаунта
+		/// </summary>
+		/// <param name="id">ID игрового лаунчера</param>
+		private void WaitArcLauncherFields(int id)
+		{
+			var firstProcessorIdle = true;
+			var idle = false;
+
+			var tempProcTime = "";
+			var proc = Process.GetProcessById(id);
+
+			for (int count = 0, cycle = 0; count < 200; count++, cycle++)
+			{
+				if (tempProcTime != proc.TotalProcessorTime.ToString())
+				{
+					tempProcTime = proc.TotalProcessorTime.ToString();
+					cycle = -1;
+
+					if (!firstProcessorIdle && idle)
+					{
+						idle = false;
+					}
+				}
+				else
+				{
+					if (cycle == 15 && !idle)
+					{
+						if (firstProcessorIdle)
+						{
+							firstProcessorIdle = false;
+							idle = true;
+						}
+						else
+						{
+							return;
+						}
+					}
+				}
+
+				Thread.Sleep(50);
+			}
 		}
 
 		/// <summary>
 		/// Ввод данных в лаунчере
 		/// </summary>
 		/// <param name="acc">Требуемый аккаунт</param>
-		private async Task LoginInGame(Account acc)
+		private void EnterAccountData(Account acc)
 		{
-			await Task.Yield();
+			if (token.IsCancellationRequested) return;
 
-			var sim = new InputSimulator();
-			sim.Keyboard.Sleep(2000);
 			sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
 			sim.Keyboard.Sleep(500);
 			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.SHIFT, VirtualKeyCode.END);
@@ -348,58 +369,134 @@
 		}
 
 		/// <summary>
+		/// Ожидание игрового клиента
+		/// </summary>
+		private void WaitGameClient()
+		{
+			if (token.IsCancellationRequested) return;
+
+			for (var i = 0; i < 90; i++)
+			{
+				foreach (var p in Process.GetProcesses())
+				{
+					if (p.MainWindowTitle == "Forsaken World II")
+					{
+						return;
+					}
+				}
+
+				Thread.Sleep(1000);
+			}
+
+			cts.Cancel();
+			throw new Exception("Игровой клиент не найден.");
+		}
+
+		private void KillProcByName(string procName)
+		{
+			var processes = Process.GetProcessesByName(procName);
+
+			if (processes.Length == 0) return;
+
+			try
+			{
+				processes.First().Kill();
+
+				for (var i = 0; i < 10; i++)
+				{
+					if (processes.First().HasExited)
+					{
+						return;
+					}
+
+					Thread.Sleep(1000);
+				}
+			}
+			catch (Exception ex)
+			{
+				ShowError($"{ex.Message}\r{ex.StackTrace}");
+			}
+		}
+
+		private void KillProcById(int id)
+		{
+			try
+			{
+				var proc = Process.GetProcessById(id);
+
+				proc.Kill();
+
+				for (var i = 0; i < 10; i++)
+				{
+					if (proc.HasExited)
+					{
+						return;
+					}
+
+					Thread.Sleep(1000);
+				}
+			}
+			catch (Exception ex)
+			{
+				ShowError($"{ex.Message}\r{ex.StackTrace}");
+			}
+		}
+
+		private void ShowError(string error)
+		{
+			WindowState = WindowState.Normal;
+			Application.Current.Dispatcher.Invoke(
+				() => wm.ShowDialog(
+					new DialogViewModel(error, DialogViewModel.DialogType.ERROR)));
+		}
+
+		/// <summary>
 		/// Ожидание запуска самой игры
 		/// </summary>
 		/// <returns></returns>
-		private async Task StartGame()
+		private void EnterToGame()
 		{
-			await Task.Yield();
+			if (token.IsCancellationRequested) return;
 
-			var sim = new InputSimulator();
+			sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.LMENU, VirtualKeyCode.F4);
+
+			Thread.Sleep(3000);
 
 			for (var i = 0; i < 1; i++)
 			{
-				sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
 				sim.Keyboard.Sleep(500);
+				sim.Keyboard.KeyPress(VirtualKeyCode.TAB);
 			}
 
 			sim.Keyboard.Sleep(500);
 			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-			
-			await DetectProccess("Forsaken World -");
 
-			sim.Keyboard.Sleep(1000);
-			sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-		}
-
-		/// <summary>
-		/// Ожидание запуска процесса
-		/// </summary>
-		/// <param name="proccessName">Название процесса</param>
-		/// <returns></returns>
-		private async Task DetectProccess(string proccessName)
-		{
-			await Task.Yield();
-
-			var counter = 0;
-			while (counter < 12)
+			for (var i = 0; i < 30; i++)
 			{
 				foreach (var p in Process.GetProcesses())
 				{
-					if (p.MainWindowTitle.Contains(proccessName))
+					if (p.ProcessName == "ArcOSOverlay" && !OverlayIds.Contains(p.Id))
 					{
-						if (!PemIds.Contains(p.Id) 
-						    && proccessName == "Forsaken World -")
+						OverlayIds.Add(p.Id);
+
+						if (OverlayIds.Count == PemIds.Count * 2 + 2)
 						{
-							PemIds.Add(p.Id);
-							counter = 12;
-							break;
+							sim.Keyboard.Sleep(1000);
+							sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+
+							foreach (var proc in Process.GetProcessesByName("pem"))
+							{
+								if (PemIds.Contains(proc.Id)) continue;
+
+								PemIds.Add(proc.Id);
+							}
+
+							return;
 						}
 					}
 				}
 
-				counter++;
-				Thread.Sleep(2000);
+				Thread.Sleep(1000);
 			}
 		}
 

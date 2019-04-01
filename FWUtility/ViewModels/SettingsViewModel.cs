@@ -11,7 +11,7 @@
 	{
 		private string _arcPath;
 		private string _fwPath;
-
+		
 		/// <summary>
 		/// Конструктор
 		/// </summary>

@@ -8,9 +8,13 @@
 		private string _firstMessage;
 		private string _secondMessage;
 		private string _thirdMessage;
+
 		private Visibility _yesNoVisibility;
 		private Visibility _okVisibility;
 		private Visibility _cancelVisibility;
+		private Visibility _errorVisibility;
+
+		private Visibility _messageVisibility;
 
 		/// <summary>
 		/// Тип диалогового окна
@@ -19,7 +23,8 @@
 		{
 			YES_NO,
 			YES_CANCEL_NO,
-			OK
+			OK,
+			ERROR
 		}
 
 		/// <summary>
@@ -43,16 +48,29 @@
 					YesNoVisibility = Visibility.Visible;
 					OkVisibility = Visibility.Hidden;
 					CancelVisibility = Visibility.Hidden;
+					MessageVisibility = Visibility.Visible;
+					ErrorVisibility = Visibility.Hidden;
 					return;
 				case DialogType.YES_CANCEL_NO:
 					YesNoVisibility = Visibility.Visible;
 					OkVisibility = Visibility.Hidden;
 					CancelVisibility = Visibility.Visible;
+					MessageVisibility = Visibility.Visible;
+					ErrorVisibility = Visibility.Hidden;
 					return;
 				case DialogType.OK:
 					YesNoVisibility = Visibility.Hidden;
 					OkVisibility = Visibility.Visible;
 					CancelVisibility = Visibility.Hidden;
+					MessageVisibility = Visibility.Visible;
+					ErrorVisibility = Visibility.Hidden;
+					return;
+				case DialogType.ERROR:
+					YesNoVisibility = Visibility.Hidden;
+					CancelVisibility = Visibility.Hidden;
+					OkVisibility = Visibility.Visible;
+					MessageVisibility = Visibility.Hidden;
+					ErrorVisibility = Visibility.Visible;
 					return;
 			}
 		}
@@ -173,7 +191,27 @@
 			}
 		}
 
+		public Visibility MessageVisibility
+		{
+			get => _messageVisibility;
+			set
+			{
+				_messageVisibility = value;
+				NotifyOfPropertyChange(() => MessageVisibility);
+			}
+		}
+
+		public Visibility ErrorVisibility
+		{
+			get => _errorVisibility;
+			set
+			{
+				_errorVisibility = value;
+				NotifyOfPropertyChange(() => ErrorVisibility);
+			}
+		}
+
 		#endregion
-		
+
 	}
 }
